@@ -1,0 +1,22 @@
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(150) UNIQUE NOT NULL,
+  age INTEGER,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS password VARCHAR(255);
+
+ALTER TABLE users
+DROP COLUMN IF EXISTS age;
+
+-- Posts table
+CREATE TABLE IF NOT EXISTS posts (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  user_id INTEGER REFERENCES users(id)
+);
