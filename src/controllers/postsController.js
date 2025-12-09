@@ -1,4 +1,5 @@
-import pool from "../db.js";
+import { db } from "../db/index.js";
+import { pool } from "../db/index.js";
 
 export async function getPosts(req, res) {
   try {
@@ -67,3 +68,4 @@ export async function deletePost(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+

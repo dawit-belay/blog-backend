@@ -1,5 +1,5 @@
 import express from "express";
-import pool from "./db.js";
+import {pool} from "./db/index.js";
 import cors from "cors";
 import postsRoutes from "./routes/posts.js";
 import usersRoutes from "./routes/users.js";
@@ -10,6 +10,7 @@ const app = express();
 // Global middlewares
 app.use(cors());
 app.use(express.json());
+
 
 // test database
 app.get("/db-test", async (req, res) => {

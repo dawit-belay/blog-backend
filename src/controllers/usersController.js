@@ -1,9 +1,14 @@
-import pool from "../db.js";
+import { db } from "../db/index.js";
+import { users } from "../db/schema.js";
+import { eq } from "drizzle-orm";
+
+// import { pool } from "../db/index.js";
+
 
 export async function getusers(req, res) {
      try {
-    const result = await pool.query("SELECT * FROM users ORDER BY id ASC");
-    res.json(result.rows);
+    const result = await db.select().from(users).orderBy(users.id);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -11,10 +16,12 @@ export async function getusers(req, res) {
 
 export async function getuser(req, res) {
     try {
-    const result = await pool.query("SELECT * FROM users WHERE id = $1", [
-      req.params.id,
-    ]);
-    res.json(result.rows[0]);
+      const result = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, Number(req.params.id)));
+      res.json(result[0]);
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -23,11 +30,12 @@ export async function getuser(req, res) {
 export async function createUser(req, res) {
     try {
     const { name, email, age } = req.body;
-    const result = await pool.query(
-      "INSERT INTO users (name, email, age) VALUES ($1, $2, $3) RETURNING *",
-      [name, email, age]
-    );
-    res.status(201).json(result.rows[0]);
+    const result = await db
+      .insert(users)
+      .values({ name, email, age })
+      .returning();
+
+      res.status(201).json(result[0]);  
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -36,25 +44,28 @@ export async function createUser(req, res) {
 export async function updateUser(req, res) {
     try {
     const { name, email } = req.body;
-    const result = await pool.query(
-      "UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING *",
-      [name, email, req.params.id]
-    );
-    res.json(result.rows[0]);
+    const result = await db
+      .update(users)
+      .set({ name, email })
+      .where(eq(users.id, Number(req.params.id)))
+      .returning();
+
+    res.json(result[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}   
+}
 
 export async function deleteUser(req, res) {
   try {
-    const result = await pool.query("DELETE FROM users WHERE id = $1 RETURNING *", [
-      req.params.id,
-    ]);
-    if (result.rows.length === 0) {
+    const result = await db
+      .delete(users)
+      .where(eq(users.id, Number(req.params.id)))
+      .returning();
+    if (result.length === 0) {
       return res.status(404).json({ error: "User not found" });
     }
-    res.json(result.rows[0]);
+    res.json(result[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
