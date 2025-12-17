@@ -1,25 +1,25 @@
 import { db } from "../db/index.js";
-import { users } from "../db/schema.js";
+import { categories } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 
 // import { pool } from "../db/index.js";
 
 
-export async function getusers(req, res) {
+export async function getcategorys(req, res) {
      try {
-    const result = await db.select().from(users).orderBy(users.id);
+    const result = await db.select().from(categories).orderBy(categories.id);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
-export async function getuser(req, res) {
+export async function getCategory(req, res) {
     try {
       const result = await db
         .select()
-        .from(users)
-        .where(eq(users.id, Number(req.params.id)));
+        .from(categories)
+        .where(eq(categories.id, Number(req.params.id)));
       res.json(result[0]);
 
   } catch (err) {
@@ -27,12 +27,12 @@ export async function getuser(req, res) {
   }
 }
 
-export async function createUser(req, res) {
+export async function createCategory(req, res) {
     try {
-    const { name, email, password,role } = req.body;
+    const { name } = req.body;
     const result = await db
-      .insert(users)
-      .values({ name, email, password, role })
+      .insert(categories)
+      .values({ name })
       .returning();
 
       res.status(201).json(result[0]);  
@@ -41,13 +41,13 @@ export async function createUser(req, res) {
   }
 }
 
-export async function updateUser(req, res) {
+export async function updateCategory(req, res) {
     try {
-    const { name, email, password, role } = req.body;
+    const { name } = req.body;
     const result = await db
-      .update(users)
-      .set({ name, email, password, role })
-      .where(eq(users.id, Number(req.params.id)))
+      .update(categories)
+      .set({ name })
+      .where(eq(categories.id, Number(req.params.id)))
       .returning();
 
     res.json(result[0]);
@@ -56,14 +56,14 @@ export async function updateUser(req, res) {
   }
 }
 
-export async function deleteUser(req, res) {
+export async function deleteCategory(req, res) {
   try {
     const result = await db
-      .delete(users)
-      .where(eq(users.id, Number(req.params.id)))
+      .delete(categories)
+      .where(eq(categories.id, Number(req.params.id)))
       .returning();
     if (result.length === 0) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "Category not found" });
     }
     res.json(result[0]);
   } catch (err) {

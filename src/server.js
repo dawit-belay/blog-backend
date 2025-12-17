@@ -3,6 +3,8 @@ import {pool} from "./db/index.js";
 import cors from "cors";
 import postsRoutes from "./routes/posts.js";
 import usersRoutes from "./routes/users.js";
+import categoriesRoutes from "./routes/category.js";
+import commentsRoutes from "./routes/comments.js";
 
 // Create app
 const app = express();
@@ -25,6 +27,8 @@ app.get("/db-test", async (req, res) => {
 // Mount routes
 app.use("/api/posts", postsRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/categories", categoriesRoutes);
+app.use("/api/comments", commentsRoutes);
 
 // Base route for testing
 app.get("/", (req, res) => {
