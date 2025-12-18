@@ -1,7 +1,7 @@
-import { pgTable, serial, integer, varchar, timestamp } from "drizzle-orm/pg-core";
+import { uuid,pgTable, serial, integer, varchar, timestamp } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 100 }).notNull(),
   email: varchar("email", { length: 150 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
@@ -10,11 +10,11 @@ export const users = pgTable("users", {
 });
 
 export const posts = pgTable("posts", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   title: varchar("title", { length: 200 }).notNull(),
   content: varchar("content", { length: 5000 }).notNull(),
-  authorId: integer("author_id").notNull().references(() => users.id),
-  categoryId: integer("category_id").notNull().references(() => categories.id),
+  authorId: uuid("author_id").notNull().references(() => users.id),
+  categoryId: uuid("category_id").notNull().references(() => categories.id),
   likesCount: integer("likes_count").default(0),
   shareCount: integer("share_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
@@ -22,14 +22,14 @@ export const posts = pgTable("posts", {
 
 export const comments = pgTable("comments", {
   id: serial("id").primaryKey(),
-  postId: integer("post_id")  .notNull().references(() => posts.id),
-  userId: integer("user_id").notNull().references(() => users.id),
+  postId: uuid("post_id").notNull().references(() => posts.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
   content: varchar("content", { length: 1000 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const categories = pgTable("categories", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 100 }).notNull().unique(),
 });
 
