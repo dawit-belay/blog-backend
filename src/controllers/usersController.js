@@ -2,6 +2,7 @@ import { db } from "../db/index.js";
 import bcrypt from "bcrypt";
 import { users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
+import { generateToken } from "../utils/jwt.js";
 
 // import { pool } from "../db/index.js";
 
@@ -12,10 +13,22 @@ export async function signupUser(req, res) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await db.insert(users)
-      .values({ name, email, password: hashedPassword, role: "user" });
+    const newUser = await db.insert(users)
+      .values({ name, email, password: hashedPassword, role: "user" })
+      .returning();
 
-    return res.status(201).json({ message: "User created" });
+    const createdUser = newUser[0];
+    const token = generateToken(newUser[0]);
+
+    res.status(201).json({
+    user: {
+      id: createdUser.id,
+      name: createdUser.name,
+      email: createdUser.email,
+      role: createdUser.role,
+    },
+    token,
+  });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -25,30 +38,29 @@ export async function signupUser(req, res) {
 export async function loginUser(req, res){
   try {
     const { email, password } = req.body;
-    const result = await db
-      .select()
-      .from(users)
-      .where(
-          eq(users.email, email), 
-      );
+    
+    const usersArray = await db.select().from(users).where(eq(users.email, email));
+    const user = usersArray[0]; // get the first user
 
-    const user = result[0];
-
-     if (!user) {
-      return res.status(401).json({ error: "Invalid email or password" });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const { password: _, ...safeUser } = user;
+    const token = generateToken(user);
 
-     return res.status(200).json({
-      message: "Login successful",
-      user: safeUser,
+    res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token,
     });
 
   } catch (err) {

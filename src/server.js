@@ -10,7 +10,13 @@ import commentsRoutes from "./routes/comments.js";
 const app = express();
 
 // Global middlewares
-app.use(cors());
+// app.use(cors());
+
+app.use(cors({
+  origin: "http://localhost:5174",
+  credentials: true
+}));
+
 app.use(express.json());
 
 
