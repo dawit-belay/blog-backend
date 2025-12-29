@@ -91,6 +91,20 @@ export async function getuser(req, res) {
   }
 }
 
+export async function becomecreator(req, res) {
+  try {
+    const { id } = req.params;
+    const result = await db
+      .update(users)
+      .set({ role: "creator" })
+      .where(eq(users.id, id))
+      .returning();
+    res.json(result[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 
 export async function updateUser(req, res) {
     try {
@@ -98,7 +112,7 @@ export async function updateUser(req, res) {
     const result = await db
       .update(users)
       .set({ name, email, password, role })
-      .where(eq(users.id, Number(req.params.id)))
+      .where(eq(users.id, req.params.id))
       .returning();
 
     res.json(result[0]);

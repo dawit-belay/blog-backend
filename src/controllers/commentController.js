@@ -1,26 +1,28 @@
 import { db } from "../db/index.js";
-import { comments } from "../db/schema.js";
+import { comments,users } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 
 // import { pool } from "../db/index.js";
 
 
 export async function getComments(req, res) {
-     try {
-    const result = await db.select().from(comments).orderBy(comments.id);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
-
-export async function getComment(req, res) {
     try {
       const result = await db
-        .select()
+        .select({
+          id: comments.id,
+          postId: comments.postId,
+          content: comments.content,
+          createdAt: comments.createdAt,
+          user: {
+            id: users.id,
+            name: users.name,
+            email: users.email
+          },  
+        })
         .from(comments)
-        .where(eq(comments.id, Number(req.params.id)));
-      res.json(result[0]);
+        .leftJoin(users, eq(comments.userId, users.id))
+        .orderBy(comments.createdAt);
+      res.json(result);
 
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -13,6 +13,7 @@ export const posts = pgTable("posts", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: varchar("title", { length: 200 }).notNull(),
   content: varchar("content", { length: 5000 }).notNull(),
+  imageUrl: varchar("image_url", { length: 1024 }),
   authorId: uuid("author_id").notNull().references(() => users.id),
   categoryId: uuid("category_id").notNull().references(() => categories.id),
   likesCount: integer("likes_count").default(0),
@@ -21,7 +22,7 @@ export const posts = pgTable("posts", {
 });
 
 export const comments = pgTable("comments", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   postId: uuid("post_id").notNull().references(() => posts.id),
   userId: uuid("user_id").notNull().references(() => users.id),
   content: varchar("content", { length: 1000 }).notNull(),
@@ -46,3 +47,7 @@ export const categories = pgTable("categories", {
 //   userId: integer("user_id").notNull().references(() => users.id),
 //   createdAt: timestamp("created_at").defaultNow(),
 // });
+
+
+
+// docker exec -it blog-backend-api-1 npx drizzle-kit push
