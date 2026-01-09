@@ -10,7 +10,9 @@
     "migrate": "drizzle-kit migrate",
     "generate": "drizzle-kit generate",
     "studio": "drizzle-kit studio",
-    "push": "drizzle-kit push"
+    "push": "drizzle-kit push",
+    "test-db": "node src/scripts/testDb.js",
+    "create-admin": "node src/scripts/createAdmin.js"
   },
   "keywords": [],
   "author": "",
