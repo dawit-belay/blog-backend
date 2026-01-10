@@ -2,7 +2,7 @@
 
 import { db } from "../db/index.js";
 import { posts,users,categories } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, ne } from "drizzle-orm";
 
 // export async function getPosts(req, res) {
 //   try {
@@ -15,12 +15,25 @@ import { eq } from "drizzle-orm";
 
 export async function getPosts(req, res) {
   try {
-    const result = await db
+    // Check if user is admin (from JWT token if available)
+    const userRole = req.user?.role;
+    const isAdmin = userRole === "admin";
+    
+    // Get status query parameter
+    const statusParam = req.query.status;
+    
+    // Determine if we should fetch all posts or only active
+    // status=all is only respected for admins
+    const shouldFetchAll = isAdmin && statusParam === "all";
+
+    // Build base query with select and joins
+    let baseQuery = db
       .select({
         id: posts.id,
         title: posts.title,
         content: posts.content,
         imageUrl: posts.imageUrl,
+        status: posts.status,
         createdAt: posts.createdAt,
         likesCount: posts.likesCount,
         shareCount: posts.shareCount,
@@ -38,8 +51,20 @@ export async function getPosts(req, res) {
       })
       .from(posts)
       .leftJoin(users, eq(posts.authorId, users.id))
-      .leftJoin(categories, eq(posts.categoryId, categories.id))
-      .orderBy(posts.createdAt);
+      .leftJoin(categories, eq(posts.categoryId, categories.id));
+
+    // Apply status filter based on admin role and query parameter
+    // Only show suspended posts if:
+    // 1. User is authenticated as admin AND
+    // 2. status=all parameter is explicitly passed
+    let finalQuery = baseQuery;
+    if (!shouldFetchAll) {
+      // Filter out suspended posts (default behavior)
+      finalQuery = baseQuery.where(ne(posts.status, "suspended"));
+    }
+
+    // Execute query and order by createdAt
+    const result = await finalQuery.orderBy(posts.createdAt);
 
     res.json(result);
   } catch (err) {
@@ -64,7 +89,26 @@ export async function getPost(req, res) {
 export async function createPost(req, res) {
   const { title, content, imageUrl, userId, categoryId } = req.body;
   try {
-    const result = await db.insert(posts).values({ title, content, imageUrl, authorId: userId, categoryId }).returning();
+    // Check if user is suspended
+    const userArray = await db.select().from(users).where(eq(users.id, userId));
+    const user = userArray[0];
+    
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    if (user.status === "suspended") {
+      return res.status(403).json({ error: "Your account has been suspended and you cannot create posts" });
+    }
+
+    const result = await db.insert(posts).values({ 
+      title, 
+      content, 
+      imageUrl, 
+      authorId: userId, 
+      categoryId,
+      status: "active"
+    }).returning();
     res.status(201).json(result[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -73,9 +117,24 @@ export async function createPost(req, res) {
 
 export async function updatePost(req, res) {
   const id = req.params.id;
-  const { title, content, imageUrl, likesCount, userId, categoryId } = req.body;
+  const { title, content, imageUrl, likesCount, userId, categoryId, status } = req.body;
   try {
-    const result = await db.update(posts).set({ title, content, imageUrl, likesCount, authorId: userId, categoryId }).where(eq(posts.id, id)).returning();
+    // Build update object with only provided fields
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (content !== undefined) updateData.content = content;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (likesCount !== undefined) updateData.likesCount = likesCount;
+    if (userId !== undefined) updateData.authorId = userId;
+    if (categoryId !== undefined) updateData.categoryId = categoryId;
+    if (status !== undefined) updateData.status = status;
+
+    // Check if at least one field is being updated
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: "No fields to update provided" });
+    }
+
+    const result = await db.update(posts).set(updateData).where(eq(posts.id, id)).returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "Post not found" });
     }

@@ -14,7 +14,7 @@ export async function signupUser(req, res) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await db.insert(users)
-      .values({ name, email, password: hashedPassword, role: "user" })
+      .values({ name, email, password: hashedPassword, role: "user", status: "active" })
       .returning();
 
     const createdUser = newUser[0];
@@ -26,6 +26,7 @@ export async function signupUser(req, res) {
       name: createdUser.name,
       email: createdUser.email,
       role: createdUser.role,
+      status: createdUser.status,
     },
     token,
   });
@@ -46,6 +47,11 @@ export async function loginUser(req, res){
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // Check if user is suspended
+    if (user.status === "suspended") {
+      return res.status(403).json({ message: "Your account has been suspended. Please contact support." });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -59,6 +65,7 @@ export async function loginUser(req, res){
         name: user.name,
         email: user.email,
         role: user.role,
+        status: user.status,
       },
       token,
     });
@@ -108,10 +115,19 @@ export async function becomecreator(req, res) {
 
 export async function updateUser(req, res) {
     try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, status } = req.body;
+    
+    // Build update object with only provided fields
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (password !== undefined) updateData.password = password;
+    if (role !== undefined) updateData.role = role;
+    if (status !== undefined) updateData.status = status;
+
     const result = await db
       .update(users)
-      .set({ name, email, password, role })
+      .set(updateData)
       .where(eq(users.id, req.params.id))
       .returning();
 

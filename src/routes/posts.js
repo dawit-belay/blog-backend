@@ -6,10 +6,11 @@ import {
   updatePost,
   deletePost
 } from "../controllers/postsController.js";
+import { optionalAuthMiddleware } from "../middleware/auth.js";
 
 const router = Router();
 
-router.get("/", getPosts);
+router.get("/", optionalAuthMiddleware, getPosts);
 router.get("/:id", getPost);
 router.post("/", createPost);
 router.put("/:id", updatePost);

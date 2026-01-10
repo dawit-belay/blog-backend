@@ -1,4 +1,4 @@
-import { uuid,pgTable, serial, integer, varchar, timestamp } from "drizzle-orm/pg-core";
+import { uuid, pgTable, integer, varchar, timestamp } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -6,6 +6,7 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 150 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
   role: varchar("role", { length: 50 }).notNull().default("user"),
+  status: varchar("status", { length: 50 }).notNull().default("active"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -16,6 +17,7 @@ export const posts = pgTable("posts", {
   imageUrl: varchar("image_url", { length: 1024 }),
   authorId: uuid("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   categoryId: uuid("category_id").notNull().references(() => categories.id),
+  status: varchar("status", { length: 50 }).notNull().default("active"),
   likesCount: integer("likes_count").default(0),
   shareCount: integer("share_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
