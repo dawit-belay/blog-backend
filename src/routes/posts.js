@@ -6,14 +6,14 @@ import {
   updatePost,
   deletePost
 } from "../controllers/postsController.js";
-import { optionalAuthMiddleware } from "../middleware/auth.js";
+import { optionalAuthMiddleware, authMiddleware, requireRole } from "../middleware/auth.js";
 
 const router = Router();
 
 router.get("/", optionalAuthMiddleware, getPosts);
 router.get("/:id", getPost);
-router.post("/", createPost);
-router.put("/:id", updatePost);
-router.delete("/:id", deletePost);
+router.post("/", authMiddleware, requireRole("creator", "admin"), createPost);
+router.put("/:id", authMiddleware, updatePost);
+router.delete("/:id", authMiddleware, deletePost);
 
 export default router;

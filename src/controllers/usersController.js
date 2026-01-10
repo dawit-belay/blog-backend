@@ -101,11 +101,22 @@ export async function getuser(req, res) {
 export async function becomecreator(req, res) {
   try {
     const { id } = req.params;
+
+    // Check authorization: user can only change their own role, or admin can change anyone's
+    if (req.user.role !== "admin" && req.user.id !== id) {
+      return res.status(403).json({ error: "You can only change your own role" });
+    }
+
     const result = await db
       .update(users)
       .set({ role: "creator" })
       .where(eq(users.id, id))
       .returning();
+    
+    if (result.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
     res.json(result[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -119,6 +119,19 @@ export async function updatePost(req, res) {
   const id = req.params.id;
   const { title, content, imageUrl, likesCount, userId, categoryId, status } = req.body;
   try {
+    // Check if post exists
+    const postArray = await db.select().from(posts).where(eq(posts.id, id));
+    const post = postArray[0];
+    
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    // Check authorization: only author or admin can update
+    if (req.user.role !== "admin" && post.authorId !== req.user.id) {
+      return res.status(403).json({ error: "You can only update your own posts" });
+    }
+
     // Build update object with only provided fields
     const updateData = {};
     if (title !== undefined) updateData.title = title;
@@ -135,9 +148,6 @@ export async function updatePost(req, res) {
     }
 
     const result = await db.update(posts).set(updateData).where(eq(posts.id, id)).returning();
-    if (result.length === 0) {
-      return res.status(404).json({ error: "Post not found" });
-    }
     res.json(result[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -147,10 +157,20 @@ export async function updatePost(req, res) {
 export async function deletePost(req, res) {
   const id = req.params.id;
   try {
-    const result = await db.delete(posts).where(eq(posts.id, id)).returning();
-    if (result.length === 0) {
+    // Check if post exists
+    const postArray = await db.select().from(posts).where(eq(posts.id, id));
+    const post = postArray[0];
+    
+    if (!post) {
       return res.status(404).json({ error: "Post not found" });
     }
+
+    // Check authorization: only author or admin can delete
+    if (req.user.role !== "admin" && post.authorId !== req.user.id) {
+      return res.status(403).json({ error: "You can only delete your own posts" });
+    }
+
+    const result = await db.delete(posts).where(eq(posts.id, id)).returning();
     res.json({ deleted: id });
   } catch (err) {
     res.status(500).json({ error: err.message });
