@@ -132,7 +132,10 @@ export async function updateUser(req, res) {
     const updateData = {};
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email;
-    if (password !== undefined) updateData.password = password;
+    if (password !== undefined) {
+      // Hash password before storing
+      updateData.password = await bcrypt.hash(password, 10);
+    }
     if (role !== undefined) updateData.role = role;
     if (status !== undefined) updateData.status = status;
 
@@ -141,6 +144,10 @@ export async function updateUser(req, res) {
       .set(updateData)
       .where(eq(users.id, req.params.id))
       .returning();
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     res.json(result[0]);
   } catch (err) {
