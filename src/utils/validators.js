@@ -60,6 +60,20 @@ export const validators = {
   // Role validation
   isValidRole(role) {
     return ['user', 'creator', 'admin'].includes(role);
+  },
+
+  // Pagination validation
+  isValidPagination(limit, offset) {
+    const limitNum = parseInt(limit) || 10;
+    const offsetNum = parseInt(offset) || 0;
+    
+    // Limit must be 1-100
+    if (limitNum < 1 || limitNum > 100) return { valid: false, error: "Limit must be between 1 and 100" };
+    
+    // Offset must be >= 0
+    if (offsetNum < 0) return { valid: false, error: "Offset must be >= 0" };
+    
+    return { valid: true, limit: limitNum, offset: offsetNum };
   }
 };
 
@@ -191,6 +205,24 @@ export function validateBecomeCreator(req, res, next) {
   if (!validators.isValidUUID(id)) {
     return res.status(400).json({ error: "Invalid user ID format" });
   }
+
+  next();
+}
+
+export function validatePagination(req, res, next) {
+  const { limit = 10, offset = 0 } = req.query;
+  
+  const validation = validators.isValidPagination(limit, offset);
+  
+  if (!validation.valid) {
+    return res.status(400).json({ error: validation.error });
+  }
+
+  // Attach validated pagination to request
+  req.pagination = {
+    limit: validation.limit,
+    offset: validation.offset
+  };
 
   next();
 }

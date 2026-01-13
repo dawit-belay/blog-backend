@@ -26,6 +26,9 @@ export async function getPosts(req, res) {
     // status=all is only respected for admins
     const shouldFetchAll = isAdmin && statusParam === "all";
 
+    // Get pagination parameters (validated by middleware)
+    const { limit, offset } = req.pagination || { limit: 10, offset: 0 };
+
     // Build base query with select and joins
     let baseQuery = db
       .select({
@@ -63,10 +66,27 @@ export async function getPosts(req, res) {
       finalQuery = baseQuery.where(ne(posts.status, "suspended"));
     }
 
-    // Execute query and order by createdAt
-    const result = await finalQuery.orderBy(posts.createdAt);
+    // Get total count for pagination
+    const countQuery = finalQuery;
+    const countResult = await db.select({ count: db.raw('COUNT(*)') }).from(posts);
+    const totalCount = parseInt(countResult[0]?.count || 0);
 
-    res.json(result);
+    // Execute paginated query
+    const result = await finalQuery
+      .orderBy(posts.createdAt)
+      .limit(limit)
+      .offset(offset);
+
+    res.json({
+      data: result,
+      pagination: {
+        total: totalCount,
+        limit,
+        offset,
+        hasMore: offset + limit < totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
