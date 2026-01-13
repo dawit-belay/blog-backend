@@ -9,8 +9,11 @@ if (!process.env.DATABASE_URL) {
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // Add SSL for production databases (Render requires this)
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  // Add SSL for production databases (Render PostgreSQL requires this)
+  // rejectUnauthorized: false allows self-signed certificates
+  ssl: process.env.NODE_ENV === "production" || process.env.DATABASE_URL?.includes("render.com") 
+    ? { rejectUnauthorized: false } 
+    : false,
 });
 
 // Test database connection on startup
