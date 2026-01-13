@@ -7,4 +7,8 @@ export default {
   dbCredentials: {
     url: process.env.DATABASE_URL,
   },
+  // Disable SSL verification for Aiven (since it has self-signed cert)
+  ssl: {
+    rejectUnauthorized: false,
+  },
 };
