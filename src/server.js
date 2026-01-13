@@ -42,5 +42,34 @@ app.get("/", (req, res) => {
 });
 
 // Start server
-const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+const PORT = process.env.PORT || 5000;
+const HOST = "0.0.0.0"; // Bind to all network interfaces for Render
+
+const server = app.listen(PORT, HOST, () => {
+  console.log(`Server running at http://${HOST}:${PORT}`);
+});
+
+// Graceful shutdown handler for Render deployments
+process.on("SIGTERM", () => {
+  console.log("SIGTERM signal received: closing HTTP server");
+  server.close(() => {
+    console.log("HTTP server closed");
+    // Close database connections if needed
+    pool.end(() => {
+      console.log("Database pool closed");
+      process.exit(0);
+    });
+  });
+});
+
+// Handle SIGINT (Ctrl+C) for local development
+process.on("SIGINT", () => {
+  console.log("SIGINT signal received: closing HTTP server");
+  server.close(() => {
+    console.log("HTTP server closed");
+    pool.end(() => {
+      console.log("Database pool closed");
+      process.exit(0);
+    });
+  });
+});
