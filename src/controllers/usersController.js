@@ -40,6 +40,10 @@ export async function loginUser(req, res){
   try {
     const { email, password } = req.body;
     
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+    
     const usersArray = await db.select().from(users).where(eq(users.email, email));
     const user = usersArray[0]; // get the first user
 
@@ -71,7 +75,13 @@ export async function loginUser(req, res){
     });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Login error:", err);
+    // Provide more detailed error information
+    const errorMessage = err.message || "Database query failed";
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === "development" ? err.stack : undefined
+    });
   }
 }
 
