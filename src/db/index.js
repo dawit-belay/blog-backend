@@ -7,13 +7,26 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is required");
 }
 
+// Configure SSL for database connection
+// Render PostgreSQL requires SSL with self-signed certificates
+// Local development typically doesn't use SSL
+const getSslConfig = () => {
+  const dbUrl = process.env.DATABASE_URL || "";
+  const isProduction = process.env.NODE_ENV === "production";
+  const isRenderDb = dbUrl.includes("render.com") || dbUrl.includes("dpg-");
+  
+  // Enable SSL for production or Render databases
+  if (isProduction || isRenderDb) {
+    return { rejectUnauthorized: false };
+  }
+  
+  // Disable SSL for local development
+  return false;
+};
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // Add SSL for production databases (Render PostgreSQL requires this)
-  // rejectUnauthorized: false allows self-signed certificates
-  ssl: process.env.NODE_ENV === "production" || process.env.DATABASE_URL?.includes("render.com") 
-    ? { rejectUnauthorized: false } 
-    : false,
+  ssl: getSslConfig(),
 });
 
 // Test database connection on startup
