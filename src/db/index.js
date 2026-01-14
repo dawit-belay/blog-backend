@@ -12,12 +12,16 @@ if (!process.env.DATABASE_URL) {
 // Local development typically doesn't use SSL
 const getSslConfig = () => {
   const dbUrl = process.env.DATABASE_URL || "";
-  const isProduction = process.env.NODE_ENV === "production";
-  const isRenderDb = dbUrl.includes("render.com") || dbUrl.includes("dpg-");
-  const isAivenDb = dbUrl.includes("aivencloud.com") || dbUrl.includes("sslmode=require");
   
-  // Enable SSL for cloud databases (Render, Aiven, etc.)
-  if (isProduction && (isRenderDb || isAivenDb)) {
+  // Check if URL explicitly requires SSL or is a cloud provider
+  const requiresSsl = dbUrl.includes("sslmode=require") || 
+                      dbUrl.includes("aivencloud.com") ||
+                      dbUrl.includes("render.com") || 
+                      dbUrl.includes("dpg-") ||
+                      process.env.NODE_ENV === "production";
+  
+  // Enable SSL with self-signed certificate support for cloud databases
+  if (requiresSsl) {
     return { rejectUnauthorized: false };
   }
   
