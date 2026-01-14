@@ -2,7 +2,7 @@
 
 import { db } from "../db/index.js";
 import { posts,users,categories } from "../db/schema.js";
-import { eq, ne } from "drizzle-orm";
+import { eq, ne, count } from "drizzle-orm";
 
 // export async function getPosts(req, res) {
 //   try {
@@ -67,8 +67,12 @@ export async function getPosts(req, res) {
     }
 
     // Get total count for pagination
-    const countQuery = finalQuery;
-    const countResult = await db.select({ count: db.raw('COUNT(*)') }).from(posts);
+    // Build count query with same filters as main query
+    let countQuery = db.select({ count: count() }).from(posts);
+    if (!shouldFetchAll) {
+      countQuery = db.select({ count: count() }).from(posts).where(ne(posts.status, "suspended"));
+    }
+    const countResult = await countQuery;
     const totalCount = parseInt(countResult[0]?.count || 0);
 
     // Execute paginated query
