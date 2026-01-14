@@ -132,7 +132,20 @@ export async function becomecreator(req, res) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.json(result[0]);
+    const updatedUser = result[0];
+    
+    // Generate new token with updated role
+    const token = generateToken(updatedUser);
+
+    // Return user data with new token
+    res.json({
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      status: updatedUser.status,
+      token: token
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

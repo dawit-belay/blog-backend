@@ -13,7 +13,8 @@
     "studio": "drizzle-kit studio",
     "push": "drizzle-kit push",
     "test-db": "node src/scripts/testDb.js",
-    "create-admin": "node src/scripts/createAdmin.js"
+    "create-admin": "node src/scripts/createAdmin.js",
+    "list-users": "node src/scripts/listUsers.js"
   },
   "keywords": [],
   "author": "",
