@@ -9,4 +9,5 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["npm", "start"]
+# Use dev mode for local development with nodemon
+CMD ["npm", "run", "dev"]
