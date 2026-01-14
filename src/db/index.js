@@ -22,17 +22,44 @@ const getSslConfig = () => {
   
   // Enable SSL with self-signed certificate support for cloud databases
   if (requiresSsl) {
+    console.log("🔒 SSL enabled for database connection (rejectUnauthorized: false)");
     return { rejectUnauthorized: false };
   }
   
   // Disable SSL for local development
+  console.log("🔓 SSL disabled for local development");
   return false;
 };
 
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: getSslConfig(),
-});
+const sslConfig = getSslConfig();
+console.log("📊 Database SSL config:", JSON.stringify(sslConfig));
+
+// Clean connection string - remove sslmode parameter and handle SSL via Pool config
+let cleanConnectionString = process.env.DATABASE_URL || "";
+if (cleanConnectionString.includes("sslmode=")) {
+  cleanConnectionString = cleanConnectionString.replace(/[?&]sslmode=[^&]*/g, '');
+  // Remove trailing ? or & if they exist
+  cleanConnectionString = cleanConnectionString.replace(/[?&]$/, '');
+  console.log("🧹 Cleaned connection string (removed sslmode parameter)");
+}
+
+// Build connection config with explicit SSL settings
+const connectionConfig = {
+  connectionString: cleanConnectionString,
+};
+
+// Apply SSL config - if SSL is required, explicitly set rejectUnauthorized: false
+if (sslConfig && typeof sslConfig === 'object') {
+  connectionConfig.ssl = {
+    rejectUnauthorized: false, // Explicitly allow self-signed certificates
+  };
+} else if (sslConfig === false) {
+  connectionConfig.ssl = false;
+}
+
+console.log("🔧 Final connection config SSL:", connectionConfig.ssl);
+
+export const pool = new Pool(connectionConfig);
 
 // Test database connection on startup
 pool.on("connect", () => {
