@@ -97,12 +97,17 @@ export async function getusers(req, res) {
 
 export async function getuser(req, res) {
     try {
+      const userId = req.params.id; // UUID, not a number
       const result = await db
         .select()
         .from(users)
-        .where(eq(users.id, Number(req.params.id)));
+        .where(eq(users.id, userId));
+      
+      if (result.length === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
       res.json(result[0]);
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -167,9 +172,10 @@ export async function updateUser(req, res) {
 
 export async function deleteUser(req, res) {
   try {
+    const userId = req.params.id; // UUID, not a number
     const result = await db
       .delete(users)
-      .where(eq(users.id, Number(req.params.id)))
+      .where(eq(users.id, userId))
       .returning();
     if (result.length === 0) {
       return res.status(404).json({ error: "User not found" });

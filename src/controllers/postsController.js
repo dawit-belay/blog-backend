@@ -99,7 +99,33 @@ export async function getPosts(req, res) {
 export async function getPost(req, res) {
   const id = req.params.id;
   try {
-    const result = await db.select().from(posts).where(eq(posts.id, id));
+    const result = await db
+      .select({
+        id: posts.id,
+        title: posts.title,
+        content: posts.content,
+        imageUrl: posts.imageUrl,
+        status: posts.status,
+        createdAt: posts.createdAt,
+        likesCount: posts.likesCount,
+        shareCount: posts.shareCount,
+
+        author: {
+          id: users.id,
+          name: users.name,
+          role: users.role,
+        },
+
+        category: {
+          id: categories.id,
+          name: categories.name,
+        }
+      })
+      .from(posts)
+      .leftJoin(users, eq(posts.authorId, users.id))
+      .leftJoin(categories, eq(posts.categoryId, categories.id))
+      .where(eq(posts.id, id));
+    
     if (result.length === 0) {
       return res.status(404).json({ error: "Post not found" });
     }
@@ -111,8 +137,15 @@ export async function getPost(req, res) {
 
 
 export async function createPost(req, res) {
-  const { title, content, imageUrl, userId, categoryId } = req.body;
+  // Use userId from body or from authenticated user
+  const { title, content, imageUrl, userId: bodyUserId, categoryId } = req.body;
+  const userId = bodyUserId || req.user?.id;
+  
   try {
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+    
     // Check if user is suspended
     const userArray = await db.select().from(users).where(eq(users.id, userId));
     const user = userArray[0];
@@ -133,7 +166,35 @@ export async function createPost(req, res) {
       categoryId,
       status: "active"
     }).returning();
-    res.status(201).json(result[0]);
+    
+    // Return post with author and category info (matching getPosts structure)
+    const postWithRelations = await db
+      .select({
+        id: posts.id,
+        title: posts.title,
+        content: posts.content,
+        imageUrl: posts.imageUrl,
+        status: posts.status,
+        createdAt: posts.createdAt,
+        likesCount: posts.likesCount,
+        shareCount: posts.shareCount,
+        author: {
+          id: users.id,
+          name: users.name,
+          role: users.role,
+        },
+        category: {
+          id: categories.id,
+          name: categories.name,
+        }
+      })
+      .from(posts)
+      .leftJoin(users, eq(posts.authorId, users.id))
+      .leftJoin(categories, eq(posts.categoryId, categories.id))
+      .where(eq(posts.id, result[0].id))
+      .limit(1);
+    
+    res.status(201).json(postWithRelations[0] || result[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -172,7 +233,35 @@ export async function updatePost(req, res) {
     }
 
     const result = await db.update(posts).set(updateData).where(eq(posts.id, id)).returning();
-    res.json(result[0]);
+    
+    // Return updated post with author and category info (matching getPosts structure)
+    const updatedPostWithRelations = await db
+      .select({
+        id: posts.id,
+        title: posts.title,
+        content: posts.content,
+        imageUrl: posts.imageUrl,
+        status: posts.status,
+        createdAt: posts.createdAt,
+        likesCount: posts.likesCount,
+        shareCount: posts.shareCount,
+        author: {
+          id: users.id,
+          name: users.name,
+          role: users.role,
+        },
+        category: {
+          id: categories.id,
+          name: categories.name,
+        }
+      })
+      .from(posts)
+      .leftJoin(users, eq(posts.authorId, users.id))
+      .leftJoin(categories, eq(posts.categoryId, categories.id))
+      .where(eq(posts.id, id))
+      .limit(1);
+    
+    res.json(updatedPostWithRelations[0] || result[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

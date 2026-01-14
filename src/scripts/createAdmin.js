@@ -51,13 +51,18 @@ async function createOrUpdateAdmin() {
     const existingUser = existingUsers[0];
 
     if (existingUser) {
-      // User exists, update their role to admin
+      // User exists, update their role to admin and password
       console.log(`✅ User found with ID: ${existingUser.id}`);
-      console.log(`📝 Updating role to 'admin'...`);
+      console.log(`📝 Updating role to 'admin' and password...`);
+
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
       const updatedUser = await db
         .update(users)
-        .set({ role: "admin" })
+        .set({ 
+          role: "admin",
+          password: hashedPassword
+        })
         .where(eq(users.email, adminEmail))
         .returning();
 
