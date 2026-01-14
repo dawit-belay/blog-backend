@@ -8,15 +8,16 @@ if (!process.env.DATABASE_URL) {
 }
 
 // Configure SSL for database connection
-// Render PostgreSQL requires SSL with self-signed certificates
+// Cloud PostgreSQL providers (Render, Aiven, etc.) often require SSL with self-signed certificates
 // Local development typically doesn't use SSL
 const getSslConfig = () => {
   const dbUrl = process.env.DATABASE_URL || "";
   const isProduction = process.env.NODE_ENV === "production";
   const isRenderDb = dbUrl.includes("render.com") || dbUrl.includes("dpg-");
+  const isAivenDb = dbUrl.includes("aivencloud.com") || dbUrl.includes("sslmode=require");
   
-  // Enable SSL for production or Render databases
-  if (isProduction || isRenderDb) {
+  // Enable SSL for cloud databases (Render, Aiven, etc.)
+  if (isProduction && (isRenderDb || isAivenDb)) {
     return { rejectUnauthorized: false };
   }
   
