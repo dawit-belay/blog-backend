@@ -199,3 +199,63 @@ export async function deleteUser(req, res) {
   }
 }
 
+// Demo login - creates or retrieves demo account and returns token
+export async function demoLogin(req, res) {
+  try {
+    const DEMO_EMAIL = "demo@washera.com";
+    const DEMO_NAME = "Demo User";
+    const DEMO_PASSWORD = "DemoPass123";
+
+    // Check if demo user exists
+    let demoUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, DEMO_EMAIL));
+
+    if (demoUser.length === 0) {
+      // Create demo user if doesn't exist
+      const hashedPassword = await bcrypt.hash(DEMO_PASSWORD, 10);
+      const newUser = await db
+        .insert(users)
+        .values({
+          name: DEMO_NAME,
+          email: DEMO_EMAIL,
+          password: hashedPassword,
+          role: "demo",
+          status: "active",
+        })
+        .returning();
+      demoUser = newUser;
+    }
+
+    const user = demoUser[0];
+
+    // Ensure demo user has demo role (in case it was changed)
+    if (user.role !== "demo") {
+      const updated = await db
+        .update(users)
+        .set({ role: "demo", status: "active" })
+        .where(eq(users.id, user.id))
+        .returning();
+      demoUser = updated;
+    }
+
+    const token = generateToken(demoUser[0]);
+
+    res.json({
+      user: {
+        id: demoUser[0].id,
+        name: demoUser[0].name,
+        email: demoUser[0].email,
+        role: demoUser[0].role,
+        status: demoUser[0].status,
+      },
+      token,
+      message: "Welcome to demo mode! You can create posts and explore all features.",
+    });
+  } catch (err) {
+    console.error("Demo login error:", err);
+    res.status(500).json({ error: err.message });
+  }
+}
+

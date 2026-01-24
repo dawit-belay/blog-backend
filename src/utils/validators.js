@@ -59,7 +59,7 @@ export const validators = {
 
   // Role validation
   isValidRole(role) {
-    return ['user', 'creator', 'admin'].includes(role);
+    return ['user', 'creator', 'admin', 'demo'].includes(role);
   },
 
   // Pagination validation

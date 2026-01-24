@@ -13,7 +13,7 @@ const router = Router();
 
 router.get("/", validatePagination, optionalAuthMiddleware, getPosts);
 router.get("/:id", getPost);
-router.post("/", authMiddleware, requireRole("creator", "admin"), validateCreatePost, createPost);
+router.post("/", authMiddleware, requireRole("creator", "admin", "demo"), validateCreatePost, createPost);
 router.put("/:id", authMiddleware, validateUpdatePost, updatePost);
 router.delete("/:id", authMiddleware, deletePost);
 
